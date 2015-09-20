@@ -17,7 +17,8 @@ This document provides answers questions from assignment **Peer Assessment 1**  
 
 Package `dplyr` is used to to simplify data manipulation on the activity dataset. The data is visualized using package `ggplot2`. If the client doesn't have these packages installed, then the following code chunk will install and load them. Otherwise, the chunk will just load namespaces of both packages and attach them on the search list:
 
-```{r load-libraries, echo=TRUE}
+
+```r
 if (!suppressPackageStartupMessages(require(dplyr))){   # if package not loaded
   install.packages("dplyr")                             # install package if required
   suppressPackageStartupMessages(library(dplyr))        # load package
@@ -33,7 +34,8 @@ if (!suppressPackageStartupMessages(require(ggplot2))){ # if package not loaded
 
 The following code fragment sets global options for R chunks:
 
-```{r setup, echo=TRUE}
+
+```r
 knitr::opts_chunk$set(out.height='800px', out.width='800px', dpi=200, echo=TRUE)
 ```
 
@@ -44,7 +46,8 @@ knitr::opts_chunk$set(out.height='800px', out.width='800px', dpi=200, echo=TRUE)
 
 If the data file *activity.csv* doesn't exist in the current working directory, then the existing zipped file containing the data file is unarchived. Otherwise, the zipped file is first downloaded and then unarchived. Exploratory data analysis was performed on the data file to determine the format of data for the three columns. The first and third columns specifying variables `steps` and `interval` can be described by the atomic vector class `integer`. The second column specifying variable `date` can be described by the class `Date`.
 
-```{r load-data}
+
+```r
 file_name <- "activity.csv"
 if (!file.exists(file_name)) {
 	# since data file doesn't exist, check if the zipped file exists ...
@@ -69,8 +72,16 @@ activity_df <- read.csv(file_name,
 
 Since there are 288 5-minute intervals in each day and there are a total of 61 days in October and November, we should have 288x61 = 17568 observations in the data frame with 3 variables:
 
-```{r dataset-sanity-test}
+
+```r
 str(activity_df)
+```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : Date, format: "2012-10-01" "2012-10-01" ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
 ```
 
 2. **Process/transform the data (if necessary) into a format suitable for your analysis.**
@@ -86,7 +97,8 @@ For this part of the assignment, you can ignore the missing values in the datase
 
 First, days and intervals with missing activity values are removed from the data frame. Using package `dplyr`, the pruned data frame is broken down into groups of observations using the `date` variable. Finally, a summary of the total number of steps is computed for each group of observations:
 
-```{r steps-per-day}
+
+```r
 steps_per_day <- na.omit(activity_df) %>%
                  group_by(date) %>%
                  summarise(totalSteps = sum(steps))
@@ -94,7 +106,8 @@ steps_per_day <- na.omit(activity_df) %>%
 
 A histogram of the total number of steps per day is plotted using package `ggplot2`:
 
-```{r histogram-mean-total-number-steps}
+
+```r
 ggplot(data=steps_per_day, aes(x=totalSteps)) +
 geom_histogram(binwidth=diff(range(steps_per_day$totalSteps))/30,
               col="red",
@@ -107,25 +120,29 @@ theme(plot.title = element_text(face="bold",size=rel(1.50))) +
 theme(axis.title = element_text(face="bold", size=rel(1.25)))
 ```
 
+<img src="figure/histogram-mean-total-number-steps-1.png" title="plot of chunk histogram-mean-total-number-steps" alt="plot of chunk histogram-mean-total-number-steps" width="800px" height="800px" />
+
 2. **Calculate and report the mean and median total number of steps taken per day.**
 
 The mean and median are computed:
 
-```{r steps-per-day-stats}
+
+```r
 steps_mean <- mean(steps_per_day$totalSteps)
 steps_median <- median(steps_per_day$totalSteps)
 ```
 
-The mean and median of the total number of steps taken per day are **`r sprintf("%.2f", steps_mean)`** and **`r I(steps_median)`**, respectively.
+The mean and median of the total number of steps taken per day are **10766.19** and **10765**, respectively.
 
 **What is the average daily activity pattern?**
 ---------------------------------------------
 
-1. **Make a time series plot (i.e., `r type = "l"`) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis).**
+1. **Make a time series plot (i.e., ) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis).**
 
 Using package `dplyr`, the data frame `activity_df` is broken down into 288 groups of observations using the `interval` variable. There are 288 groups since each day is divided into 5-minute intervals. For each group, the average number of steps within that group are computed.
 
-```{r steps-per-interval}
+
+```r
 steps_per_interval <- activity_df %>%
                       group_by(interval) %>%
                       summarise(avg_steps=mean(steps, na.rm=TRUE))
@@ -133,7 +150,8 @@ steps_per_interval <- activity_df %>%
 
 Using package `ggplot2`, a time-series plot of the 5-minute interval versus the average number of steps taken is generated:
 
-```{r timeseries-plot-avg-daily-pattern}
+
+```r
 ggplot(steps_per_interval, aes(x=interval, y=avg_steps)) +
 geom_line(col="blue", lwd=1.05) +
 labs(title="Average Daily Activity Pattern") +
@@ -143,11 +161,14 @@ theme(plot.title = element_text(face="bold",size=rel(1.5))) +
 theme(axis.title = element_text(face="bold", size=rel(1.25)))
 ```
 
+<img src="figure/timeseries-plot-avg-daily-pattern-1.png" title="plot of chunk timeseries-plot-avg-daily-pattern" alt="plot of chunk timeseries-plot-avg-daily-pattern" width="800px" height="800px" />
+
 2. **Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?**
 
 The word **average** in the question has caused confusion in understanding the question. This has led me to interpret the question in two ways. The first interpretation is: "I break down the data frame `activity_df` into 288 groups of observations using the `interval` variable. I summarize each of the 288 groups based on the maximum number of steps. Out of these 288 summaries, I report the `interval` variable for the observation containing the maximum number of steps."
 
-```{r interval-with-max-steps1}
+
+```r
 maxsteps_per_interval <- activity_df %>%
                           group_by(interval) %>%
                           summarise(max_steps=max(steps, na.rm=TRUE))
@@ -158,11 +179,12 @@ obs_idx <- which.max(maxsteps_per_interval$max_steps)
 max_step_interval <- maxsteps_per_interval$interval[obs_idx]
 ```
 
-The 5-minute interval containing the maximum number of steps is: **`r max_step_interval`**.
+The 5-minute interval containing the maximum number of steps is: **615**.
 
 The second interpretation is: "I break down the data frame `activity_df` into 288 groups of observations using the `interval` variable. I summarize each of the 288 groups based on the average number of steps. Out of these 288 summaries, I report the `interval` variable for the observation containing the maximum average number of steps."
 
-```{r interval-with-max-steps2}
+
+```r
 # the summary based on average number of steps has been computed while answering question 1
 
 # now, find which observation has the maximum value for the average number of steps
@@ -171,7 +193,7 @@ obs_idx <- which.max(steps_per_interval$avg_steps)
 max_step_interval <- steps_per_interval$interval[obs_idx]
 ```
 
-The 5-minute interval containing the maximum number of steps is: **`r max_step_interval`** as can be seen from the time-series plot of average number of steps taken.
+The 5-minute interval containing the maximum number of steps is: **835** as can be seen from the time-series plot of average number of steps taken.
 
 I feel that the first interpretation is more valid and useful since an interval having the maximum average number of steps need not have the maximum number of steps. For example, the mean value of a vector `c(1:10)` is higher than the mean value of the vector `c(rep(0,9),20)`. However, the largest value `20` is contained in the second vector.
 
@@ -184,12 +206,13 @@ Note that there are a number of days/intervals where there are missing values (c
 
 The following code chunk computes the total number of rows with `NA`s:
 
-```{r num-of-rows-nas}
+
+```r
 num_of_rows_nas <- sum(is.na(activity_df))
 num_of_steps_nas <- sum(is.na(activity_df$steps))
 ```
 
-The number of rows in the data frame `activity_df` with `NA`s is: **`r num_of_rows_nas`** while the number of elements in variable `steps` with `NA`s is: **`r num_of_steps_nas`**. It is confirmed that all the missing values in data frame `activity_df` are in variable `steps`.
+The number of rows in the data frame `activity_df` with `NA`s is: **2304** while the number of elements in variable `steps` with `NA`s is: **2304**. It is confirmed that all the missing values in data frame `activity_df` are in variable `steps`.
 
 2. **Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.**
 
@@ -199,7 +222,8 @@ The strategy used in this analysis is to replace missing values in variable `ste
 
 Since, base R doesn't define a function to compute the mode of a set of numbers, the following function is implemented:
 
-```{r Mode-function}
+
+```r
 Mode <- function(x) {
   # extract unique elements in number set x
   ux <- unique(x)
@@ -214,7 +238,8 @@ Mode <- function(x) {
 
 Using package `dplyr`, data frame `activity_df` is broken down into 288 groups of 5-minute intervals and for each group, the mode of variable `steps` is computed:
 
-```{r compute-mode}
+
+```r
 mode_per_interval <- activity_df %>%
                       group_by(interval) %>%
                       summarise(mode_steps = Mode(steps))
@@ -222,7 +247,8 @@ mode_per_interval <- activity_df %>%
 
 Data frame `activity_new` is a copy of data frame `activity_df`. The missing values in variable `steps` are replaced with the appropriate mode of steps taken for the same 5-minute interval:
 
-```{r imputing-nas}
+
+```r
 # make copy of original activity dataset
 activity_new <- activity_df
 # indices of all elements in steps that have missing values
@@ -238,14 +264,15 @@ activity_new$steps[na_idx] <- mode_per_interval$mode_steps[int_idx]
 na_cnt <- sum(is.na(activity_new))
 ```
 
-There are **`r na_cnt`** missing values in the new dataset.
+There are **0** missing values in the new dataset.
 
 4. **Perform analysis on the new dataset.**
   + **Make a histogram of the total number of steps taken each day.**
     
   A summary of the total number of steps taken each day is computed for the new data frame and a histogram of the total number of steps per day is plotted:
 
-```{r histogram-number-steps-after-imputing}
+
+```r
 newsteps_per_day <- na.omit(activity_new) %>%
                     group_by(date) %>%
                     summarise(totalSteps = sum(steps))
@@ -261,20 +288,23 @@ theme(plot.title = element_text(face="bold",size=rel(1.5))) +
 theme(axis.title = element_text(face="bold", size=rel(1.25)))
 ```
 
+<img src="figure/histogram-number-steps-after-imputing-1.png" title="plot of chunk histogram-number-steps-after-imputing" alt="plot of chunk histogram-number-steps-after-imputing" width="800px" height="800px" />
+
   + **Calculate and report the mean and median total number of steps taken per day.**
   
   The mean and median are computed:
 
-```{r newsteps-per-day-stats}
+
+```r
 newsteps_mean <- mean(newsteps_per_day$totalSteps)
 newsteps_median <- median(newsteps_per_day$totalSteps)
 ```
 
-The mean and median of the total number of steps taken per day in the new data frame `activity_new` are **`r sprintf("%.2f", newsteps_mean)`** and **`r I(newsteps_median)`**, respectively.
+The mean and median of the total number of steps taken per day in the new data frame `activity_new` are **9354.23** and **10395**, respectively.
 
   + **Do these values differ from the estimates from the first part of the assignment?**
   
-  The mean and median of the total number of steps taken per day in the old data frame `activity_df` are **`r sprintf("%.2f", steps_mean)`** and **`r I(steps_median)`**, respectively. Thus, the mean has changed considerably from **`r sprintf("%.2f", steps_mean)`** to **`r sprintf("%.2f", newsteps_mean)`**. The change in the median from **`r I(steps_median)`** to **`r I(newsteps_median)`** is less drastic.
+  The mean and median of the total number of steps taken per day in the old data frame `activity_df` are **10766.19** and **10765**, respectively. Thus, the mean has changed considerably from **10766.19** to **9354.23**. The change in the median from **10765** to **10395** is less drastic.
   
   + **What is the impact of imputing missing data on the estimates of the total daily number of steps?**
   
@@ -288,7 +318,8 @@ Use the dataset with the filled-in missing values for this part.
   
   The following code uses the `mutate` verb in package `dplyr` to add a new factor variable `day` that is a function of an existing variable `date` and the internal structure of the data frame is displayed to check if the new factor variable `day` is added correctly:
   
-```{r mutate-days}
+
+```r
 activity_new <- mutate(activity_new,
                       day=factor((weekdays(date)%in%c("Saturday","Sunday")),
                                  levels=c(FALSE,TRUE), labels=c("weekend","weekday"))
@@ -297,11 +328,20 @@ activity_new <- mutate(activity_new,
 str(activity_new)
 ```
 
+```
+## 'data.frame':	17568 obs. of  4 variables:
+##  $ steps   : int  0 0 0 0 0 0 0 0 0 0 ...
+##  $ date    : Date, format: "2012-10-01" "2012-10-01" ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+##  $ day     : Factor w/ 2 levels "weekend","weekday": 1 1 1 1 1 1 1 1 1 1 ...
+```
+
   + **Make a panel plot containing a time series plot (i.e., `type = "l"`) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all `weekday` days or `weekend` days (y-axis).**
   
   The following code uses package `ggplot2` to generate a faceted time-series plot to display the activity pattern for weekdays and weekends:
   
-```{r panel-timeseries-plot}
+
+```r
 steps_per_day <- activity_new %>%
   group_by(day, interval) %>%
   summarise(avg_steps=mean(steps, na.rm=TRUE))
@@ -316,4 +356,6 @@ ggplot(steps_per_day, aes(x=interval, y=avg_steps)) +
   theme(axis.title = element_text(face="bold", size=rel(1.25))) +
   theme(strip.text = element_text(face="bold",size=rel(1.25), colour="firebrick"))
 ```
+
+<img src="figure/panel-timeseries-plot-1.png" title="plot of chunk panel-timeseries-plot" alt="plot of chunk panel-timeseries-plot" width="800px" height="800px" />
 
